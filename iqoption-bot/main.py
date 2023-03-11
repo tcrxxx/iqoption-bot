@@ -29,6 +29,75 @@ check,reason=iqoption.connect()
 print('Reason:', reason)
 print("Email:", iqoption.email)
 
+def try_bet(candles, last_bollinger_up, last_bollinger_down):
+    while (not(candles[-1]['close'] >= last_bollinger_up) or not(candles[-1]['close']  <= last_bollinger_down)):
+        candles = getCandles()
+        last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
+        print("last close:" + str(candles[-1]['close']) + " - last_bollinger_up:" + str(last_bollinger_up) + " - last_bollinger_down:" + str(last_bollinger_down))
+        time.sleep(5)
+
+    if(candles[-1]['close'] >= last_bollinger_up):
+        action = "put"
+
+    if(candles[-1]['close'] <= last_bollinger_down):
+        action = "call"
+
+    if not DIGITAL:
+        print("Buy Binary Option")
+        _,id=iqoption.buy(amount,ACTIVES_FINAL,action,duration)
+        print("Buy id: ", id)
+        while iqoption.get_async_order(id)==None:
+            pass
+        order_data=iqoption.get_async_order(id)
+        #print(iqoption.get_async_order(id))
+        
+        print("start check win please wait")
+        print(iqoption.check_win_v2(id,polling_time))
+        
+    else:
+        print("Buy Digital Option spot")
+        _,id=iqoption.buy_digital_spot(ACTIVES_FINAL,amount,action,duration)
+        print("Buy id: ", id)
+        
+        while iqoption.get_async_order(id)==None:
+            pass
+        time.sleep(5)
+        order_data=iqoption.get_async_order(id)
+        #print(iqoption.get_async_order(id))
+        
+        print("start check win please wait")
+        while True:
+            print("wait...")
+            check_close,win_money=iqoption.check_win_digital_v2(id)
+            
+            if check_close:
+                if float(win_money)>0:
+                        win_money=("%.2f" % (win_money))
+                        print("you win",win_money,"money :D")
+                else:
+                        print("you loose :(")
+                break
+            else:
+                time.sleep(5)
+        
+        print("End of process :)")
+
+def getCandles():
+    print("get candles")
+    candles = iqoption.get_candles(ACTIVES_FINAL,60,111,time.time())
+    # print(candles)
+    return candles
+
+def getBollingerBandsLimits(candles):
+    print("Calculating Bollinger Bands")
+    bollinger_up, bollinger_down = bollingerBandsUtils.get_bollinger_bands_candles(candles)
+
+    last_bollinger_up, last_bollinger_down = bollinger_up.iloc[-1], bollinger_down.iloc[-1]
+    print("Bollinger Bands - Last UP",last_bollinger_up)
+    print("Bollinger Bands - Last DOWN",last_bollinger_down)
+
+    return last_bollinger_up, last_bollinger_down
+
 #MFA
 if MFA_enabled:
      print("******** MFA Auth **********")
@@ -40,63 +109,16 @@ if MFA_enabled:
 if check:
     print("********* Connected *********")
     print("Start your bot")
-    
     print("Currency: ", iqoption.get_currency())
-    
     iqoption.change_balance(balance_type)
-    
-    print("get candles")
-    candles = iqoption.get_candles(ACTIVES_FINAL,60,111,time.time())
-    print(candles)
-
-    print("Calculating Bollinger Bands")
-    bollinger_up, bollinger_down = bollingerBandsUtils.get_bollinger_bands_candles(candles)
-
-    last_bollinger_up, last_bollinger_down = bollinger_up.iloc[-1], bollinger_down.iloc[-1]
-    print("Bollinger Bands - Last UP",last_bollinger_up)
-    print("Bollinger Bands - Last DOWN",last_bollinger_down)
-
+    print("Balance Type:", balance_type)
     print("Balance:", iqoption.get_balance())
     
-    if not DIGITAL:
-         print("Buy Binary Option")
-         _,id=iqoption.buy(amount,ACTIVES_FINAL,action,duration)
-         print("Buy id: ", id)
-         while iqoption.get_async_order(id)==None:
-             pass
-         order_data=iqoption.get_async_order(id)
-         #print(iqoption.get_async_order(id))
-         
-         print("start check win please wait")
-         print(iqoption.check_win_v2(id,polling_time))
-         
-    else:
-         print("Buy Digital Option spot")
-         _,id=iqoption.buy_digital_spot(ACTIVES_FINAL,amount,action,duration)
-         print("Buy id: ", id)
-         
-         while iqoption.get_async_order(id)==None:
-             pass
-         time.sleep(5)
-         order_data=iqoption.get_async_order(id)
-         #print(iqoption.get_async_order(id))
-         
-         print("start check win please wait")
-         while True:
-              print("wait...")
-              check_close,win_money=iqoption.check_win_digital_v2(id)
-              
-              if check_close:
-                   if float(win_money)>0:
-                        win_money=("%.2f" % (win_money))
-                        print("you win",win_money,"money :D")
-                   else:
-                        print("you loose :(")
-                   break
-              else:
-                  time.sleep(5)
-         
-         print("End of process :)")
+    candles = getCandles()
+
+    last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
+
+    try_bet(candles, last_bollinger_up, last_bollinger_down)
 
     #if see this you can close network for test
     while True:
