@@ -4,25 +4,30 @@ import time
 from collections import defaultdict
 from iqoptionapi.stable_api import IQ_Option
 
-error_password="""{"code":"invalid_credentials","message":"You entered the wrong credentials. Please check that the login/password is correct."}"""
 
 iqoption = IQ_Option(config.IQOPTION_USER,config.IQOPTION_PASS)
 
-balance_type="PRACTICE" #MODE="PRACTICE"/"REAL"/"TOURNAMENT
-MFA_enabled=False
+#Configs Constants
+ERROR_PASSWORD="""{"code":"invalid_credentials","message":"You entered the wrong credentials. Please check that the login/password is correct."}"""
+BALANCE_TYPE="PRACTICE" #MODE="PRACTICE"/"REAL"/"TOURNAMENT
+MFA_ENABLED=False
 ACTIVES="EURUSD"
 DIGITAL=True
 DIGITAL_SUFFIX="-OTC"
 ACTIVES_FINAL=ACTIVES + DIGITAL_SUFFIX if DIGITAL else ACTIVES
-duration=1#minute 1 or 5
-amount=50
-action="call"#put
-polling_time=3
+CANDLES_INTERVAL=360 
+CANDLES_COUNT=700
+DURATION=1#minute 1 or 5
+AMOUNT=50
+POLLING_TIME=3
+
+#Variables
 win_score,lost_score, lost_limit = 0,0,5
+action="call"#put
 
 print("******** Begin iqoption bot *********")
 print("ACTIVES selected: ", ACTIVES_FINAL)
-print("Balance type selected; ", balance_type)
+print("Balance type selected; ", BALANCE_TYPE)
 
 print("Conecting...")
 check,reason=iqoption.connect()
@@ -57,7 +62,7 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
 
     if not DIGITAL:
         print("Buy Binary Option")
-        _,id=iqoption.buy(amount,ACTIVES_FINAL,action,duration)
+        _,id=iqoption.buy(AMOUNT,ACTIVES_FINAL,action,DURATION)
         print("Buy id: ", id)
         while iqoption.get_async_order(id)==None:
             pass
@@ -65,11 +70,11 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
         #print(iqoption.get_async_order(id))
         
         print("start check win please wait")
-        print(iqoption.check_win_v2(id,polling_time))
+        print(iqoption.check_win_v2(id,POLLING_TIME))
         
     else:
         print("Buy Digital Option spot")
-        _,id=iqoption.buy_digital_spot(ACTIVES_FINAL,amount,action,duration)
+        _,id=iqoption.buy_digital_spot(ACTIVES_FINAL,AMOUNT,action,DURATION)
         print("Buy id: ", id)
         
         while iqoption.get_async_order(id)==None:
@@ -84,6 +89,8 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
             check_close,win_money=iqoption.check_win_digital_v2(id)
             
             if check_close:
+                bet_candle = iqoption.get_candles(ACTIVES_FINAL,CANDLES_INTERVAL,CANDLES_COUNT,time.time())
+                print("Final candle close:",bet_candle[-1])
                 if float(win_money)>0:
                         win_money=("%.2f" % (win_money))
                         print("you win",win_money,"money :D")
@@ -99,7 +106,7 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
 
 def getCandles():
     print("get candles")
-    candles = iqoption.get_candles(ACTIVES_FINAL,60,111,time.time())
+    candles = iqoption.get_candles(ACTIVES_FINAL,CANDLES_INTERVAL,CANDLES_COUNT,time.time())
     # print(candles)
     return candles
 
@@ -114,7 +121,7 @@ def getBollingerBandsLimits(candles):
     return last_bollinger_up, last_bollinger_down
 
 #MFA
-if MFA_enabled:
+if MFA_ENABLED:
      print("--------------------------------------------------------------------------------------------------------------")
      print("******** MFA Auth **********")
      code_sms = input("Enter the code received: ")
@@ -128,8 +135,8 @@ if check:
     print("********* Connected *********")
     print("Start your bot")
     print("Currency: ", iqoption.get_currency())
-    iqoption.change_balance(balance_type)
-    print("Balance Type:", balance_type)
+    iqoption.change_balance(BALANCE_TYPE)
+    print("Balance Type:", BALANCE_TYPE)
     print("Balance:", iqoption.get_balance())
     print("wins:" + str(win_score) + " - losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit))
     print("--------------------------------------------------------------------------------------------------------------")
@@ -139,7 +146,7 @@ if check:
     last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
 
     #if see this you can close network for test
-    while lost_score <= lost_limit:
+    while lost_score < lost_limit:
         print("--------------------------------------------------------------------------------------------------------------")
         print("Try new bet!")
         try_bet(candles, last_bollinger_up, last_bollinger_down)
@@ -151,7 +158,7 @@ if check:
             if check:
                 print("Reconnect successfully")
             else:
-                if reason==error_password:
+                if reason==ERROR_PASSWORD:
                     print("Error Password")
                 else:
                     print("No Network")
@@ -164,7 +171,7 @@ else:
 
     if reason=="[Errno -2] Name or service not known":
         print("No Network")
-    elif reason==error_password:
+    elif reason==ERROR_PASSWORD:
         print("Error Password")
     else:
         print(reason)
