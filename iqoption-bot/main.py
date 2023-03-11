@@ -30,7 +30,13 @@ print('Reason:', reason)
 print("Email:", iqoption.email)
 
 def try_bet(candles, last_bollinger_up, last_bollinger_down):
-    while (not(candles[-1]['close'] >= last_bollinger_up) or not(candles[-1]['close']  <= last_bollinger_down)):
+
+    # Test logic
+    # candles[-1]['close']=0.720685
+    # last_bollinger_up=0.7206379734957176
+    # last_bollinger_down=0.7203725265042824
+
+    while (not(candles[-1]['close'] >= last_bollinger_up) and not(candles[-1]['close']  <= last_bollinger_down)):
         candles = getCandles()
         last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
         print("last close:" + str(candles[-1]['close']) + " - last_bollinger_up:" + str(last_bollinger_up) + " - last_bollinger_down:" + str(last_bollinger_down))
@@ -118,10 +124,11 @@ if check:
 
     last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
 
-    try_bet(candles, last_bollinger_up, last_bollinger_down)
-
     #if see this you can close network for test
     while True:
+
+        try_bet(candles, last_bollinger_up, last_bollinger_down)
+
         if iqoption.check_connect()==False:#detect the websocket is close
             print("try reconnect")
             check,reason=iqoption.connect()
