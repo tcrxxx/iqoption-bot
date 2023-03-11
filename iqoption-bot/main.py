@@ -139,7 +139,7 @@ if check:
     last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
 
     #if see this you can close network for test
-    while lost_score >= lost_limit:
+    while lost_score <= lost_limit:
         print("--------------------------------------------------------------------------------------------------------------")
         print("Try new bet!")
         try_bet(candles, last_bollinger_up, last_bollinger_down)
@@ -157,7 +157,7 @@ if check:
                     print("No Network")
 
     print("--------------------------------------------------------------------------------------------------------------")
-    print("Lost limit reached -> losts:" + str(lost_score) + " - lost_limit:" + lost_limit)
+    print("Lost limit reached -> losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit))
     print("End of process!")
 
 else:
