@@ -18,6 +18,7 @@ duration=1#minute 1 or 5
 amount=1
 action="call"#put
 polling_time=3
+win_score,lost_score, lost_limit = 0,0,5
 
 print("******** Begin iqoption bot *********")
 print("ACTIVES selected: ", ACTIVES_FINAL)
@@ -31,15 +32,19 @@ print("Email:", iqoption.email)
 
 def try_bet(candles, last_bollinger_up, last_bollinger_down):
 
+    global win_score, lost_score
+
     # Test logic
     # candles[-1]['close']=0.720685
     # last_bollinger_up=0.7206379734957176
     # last_bollinger_down=0.7203725265042824
 
     while (not(candles[-1]['close'] >= last_bollinger_up) and not(candles[-1]['close']  <= last_bollinger_down)):
+        print("--------------------------------------------------------------------------------------------------------------")
         candles = getCandles()
         last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
         print("last close:" + str(candles[-1]['close']) + " - last_bollinger_up:" + str(last_bollinger_up) + " - last_bollinger_down:" + str(last_bollinger_down))
+        print("wins:" + str(win_score) + " - losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit))
         time.sleep(5)
 
     if(candles[-1]['close'] >= last_bollinger_up):
@@ -47,6 +52,8 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
 
     if(candles[-1]['close'] <= last_bollinger_down):
         action = "call"
+
+    print("Action decide:" + action)
 
     if not DIGITAL:
         print("Buy Binary Option")
@@ -80,8 +87,10 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
                 if float(win_money)>0:
                         win_money=("%.2f" % (win_money))
                         print("you win",win_money,"money :D")
+                        win_score = win_score + 1
                 else:
                         print("you loose :(")
+                        lost_score = lost_score + 1
                 break
             else:
                 time.sleep(5)
@@ -106,28 +115,35 @@ def getBollingerBandsLimits(candles):
 
 #MFA
 if MFA_enabled:
+     print("--------------------------------------------------------------------------------------------------------------")
      print("******** MFA Auth **********")
      code_sms = input("Enter the code received: ")
      status,reason = iqoption.connect_2fa(code_sms)
      print("Status:",status)
      print("Reason:", reason)
+     print("--------------------------------------------------------------------------------------------------------------")
 
 if check:
+    print("--------------------------------------------------------------------------------------------------------------")
     print("********* Connected *********")
     print("Start your bot")
     print("Currency: ", iqoption.get_currency())
     iqoption.change_balance(balance_type)
     print("Balance Type:", balance_type)
     print("Balance:", iqoption.get_balance())
+    print("wins:" + str(win_score) + " - losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit))
+    print("--------------------------------------------------------------------------------------------------------------")
     
     candles = getCandles()
 
     last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
 
     #if see this you can close network for test
-    while True:
-
+    while True or lost >= lost_limit:
+        print("--------------------------------------------------------------------------------------------------------------")
+        print("Try new bet!")
         try_bet(candles, last_bollinger_up, last_bollinger_down)
+        print("--------------------------------------------------------------------------------------------------------------")
 
         if iqoption.check_connect()==False:#detect the websocket is close
             print("try reconnect")
