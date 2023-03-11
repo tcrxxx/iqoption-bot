@@ -15,7 +15,7 @@ DIGITAL=True
 DIGITAL_SUFFIX="-OTC"
 ACTIVES_FINAL=ACTIVES + DIGITAL_SUFFIX if DIGITAL else ACTIVES
 duration=1#minute 1 or 5
-amount=1
+amount=50
 action="call"#put
 polling_time=3
 win_score,lost_score, lost_limit = 0,0,5
@@ -139,7 +139,7 @@ if check:
     last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
 
     #if see this you can close network for test
-    while True or lost >= lost_limit:
+    while lost_score >= lost_limit:
         print("--------------------------------------------------------------------------------------------------------------")
         print("Try new bet!")
         try_bet(candles, last_bollinger_up, last_bollinger_down)
@@ -157,7 +157,7 @@ if check:
                     print("No Network")
 
     print("--------------------------------------------------------------------------------------------------------------")
-    print("Lost limit reached -> losts:" + str(lost) + " - lost_limit:" + lost_limit)
+    print("Lost limit reached -> losts:" + str(lost_score) + " - lost_limit:" + lost_limit)
     print("End of process!")
 
 else:
