@@ -95,7 +95,7 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
             else:
                 time.sleep(5)
         
-        print("End of process :)")
+        print("End of bet :)")
 
 def getCandles():
     print("get candles")
@@ -155,6 +155,10 @@ if check:
                     print("Error Password")
                 else:
                     print("No Network")
+
+    print("--------------------------------------------------------------------------------------------------------------")
+    print("Lost limit reached -> losts:" + str(lost) + " - lost_limit:" + lost_limit)
+    print("End of process!")
 
 else:
 
