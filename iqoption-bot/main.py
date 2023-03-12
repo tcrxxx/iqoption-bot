@@ -15,14 +15,15 @@ ACTIVES="EURUSD"
 DIGITAL=True
 DIGITAL_SUFFIX="-OTC"
 ACTIVES_FINAL=ACTIVES + DIGITAL_SUFFIX if DIGITAL else ACTIVES
-CANDLES_INTERVAL=360 
-CANDLES_COUNT=700
+CANDLES_INTERVAL=120 
+CANDLES_COUNT=222
 DURATION=1#minute 1 or 5
 AMOUNT=50
 POLLING_TIME=3
 
 #Variables
 win_score,lost_score, lost_limit = 0,0,5
+win_values,lost_values = 0,0
 action="call"#put
 
 print("******** Begin iqoption bot *********")
@@ -37,7 +38,7 @@ print("Email:", iqoption.email)
 
 def try_bet(candles, last_bollinger_up, last_bollinger_down):
 
-    global win_score, lost_score
+    global win_score, lost_score, win_values, lost_values
 
     # Test logic
     # candles[-1]['close']=0.720685
@@ -49,7 +50,7 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
         candles = getCandles()
         last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
         print("last close:" + str(candles[-1]['close']) + " - last_bollinger_up:" + str(last_bollinger_up) + " - last_bollinger_down:" + str(last_bollinger_down))
-        print("wins:" + str(win_score) + " - losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit))
+        print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
         time.sleep(5)
 
     if(candles[-1]['close'] >= last_bollinger_up):
@@ -94,10 +95,12 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
                 if float(win_money)>0:
                         win_money=("%.2f" % (win_money))
                         print("you win",win_money,"money :D")
+                        win_values = win_values + win_money
                         win_score = win_score + 1
                 else:
                         print("you loose :(")
                         lost_score = lost_score + 1
+                        lost_values = lost_values + win_money
                 break
             else:
                 time.sleep(5)
@@ -138,7 +141,7 @@ if check:
     iqoption.change_balance(BALANCE_TYPE)
     print("Balance Type:", BALANCE_TYPE)
     print("Balance:", iqoption.get_balance())
-    print("wins:" + str(win_score) + " - losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit))
+    print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
     print("--------------------------------------------------------------------------------------------------------------")
     
     candles = getCandles()
@@ -165,6 +168,7 @@ if check:
 
     print("--------------------------------------------------------------------------------------------------------------")
     print("Lost limit reached -> losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit))
+    print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
     print("End of process!")
 
 else:
