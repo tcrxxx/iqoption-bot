@@ -1,6 +1,7 @@
-import bollingerBandsUtils
+import BollingerBandsUtils
 import config
 import time
+import PushbulletUtils
 from collections import defaultdict
 from iqoptionapi.stable_api import IQ_Option
 
@@ -115,7 +116,7 @@ def getCandles():
 
 def getBollingerBandsLimits(candles):
     print("Calculating Bollinger Bands")
-    bollinger_up, bollinger_down = bollingerBandsUtils.get_bollinger_bands_candles(candles)
+    bollinger_up, bollinger_down = BollingerBandsUtils.get_bollinger_bands_candles(candles)
 
     last_bollinger_up, last_bollinger_down = bollinger_up.iloc[-1], bollinger_down.iloc[-1]
     print("Bollinger Bands - Last UP",last_bollinger_up)
@@ -155,6 +156,10 @@ if check:
         try_bet(candles, last_bollinger_up, last_bollinger_down)
         print("--------------------------------------------------------------------------------------------------------------")
 
+        if lost_score + 1 == lost_limit:
+            PushbulletUtils.push_note_phone("Lost limit is near","Keep your yes open, because your bot is near to stop" + " - losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit) + "wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
+
+
         if iqoption.check_connect()==False:#detect the websocket is close
             print("try reconnect")
             check,reason=iqoption.connect()
@@ -169,6 +174,7 @@ if check:
     print("--------------------------------------------------------------------------------------------------------------")
     print("Lost limit reached -> losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit))
     print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
+    PushbulletUtils.push_note_phone("Lost limit reached -> losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit), "wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
     print("End of process!")
 
 else:
