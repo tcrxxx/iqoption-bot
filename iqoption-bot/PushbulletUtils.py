@@ -14,4 +14,5 @@ print("PushBullet Device Logged:",phone)
 print("--------------------------------------------------------------------------------------------------------------")
 
 def push_note_phone(title,message):
+    print("push note to phone:",title)
     pb.push_note(DEFAULT_TITLE + title, message, device=phone)

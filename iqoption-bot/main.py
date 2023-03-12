@@ -94,14 +94,14 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
                 bet_candle = iqoption.get_candles(ACTIVES_FINAL,CANDLES_INTERVAL,CANDLES_COUNT,time.time())
                 print("Final candle close:",bet_candle[-1])
                 if float(win_money)>0:
+                        win_values = win_values + float(win_money)
                         win_money=("%.2f" % (win_money))
                         print("you win",win_money,"money :D")
-                        win_values = win_values + win_money
                         win_score = win_score + 1
                 else:
                         print("you loose :(")
                         lost_score = lost_score + 1
-                        lost_values = lost_values + win_money
+                        lost_values = lost_values + float(win_money)
                 break
             else:
                 time.sleep(5)
@@ -153,6 +153,7 @@ if check:
     while lost_score < lost_limit:
         print("--------------------------------------------------------------------------------------------------------------")
         print("Try new bet!")
+        print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
         try_bet(candles, last_bollinger_up, last_bollinger_down)
         print("--------------------------------------------------------------------------------------------------------------")
 
