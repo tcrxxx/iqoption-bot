@@ -1,6 +1,8 @@
 import BollingerBandsUtils
+import CSVUtils
 import config
 import time
+from operator import attrgetter
 import PushbulletUtils
 from collections import defaultdict
 from iqoptionapi.stable_api import IQ_Option
@@ -21,10 +23,13 @@ CANDLES_COUNT=222
 DURATION=1#minute 1 or 5
 AMOUNT=50
 POLLING_TIME=3
+USE_MAX_MIN=True
 
 #Variables
 win_score,lost_score, lost_limit = 0,0,5
 win_values,lost_values = 0,0
+max_close_candle,min_close_candle = 0,0
+loose_log_list = []
 action="call"#put
 
 print("******** Begin iqoption bot *********")
@@ -50,15 +55,24 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
         print("--------------------------------------------------------------------------------------------------------------")
         candles = getCandles()
         last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
-        print("last close:" + str(candles[-1]['close']) + " - last_bollinger_up:" + str(last_bollinger_up) + " - last_bollinger_down:" + str(last_bollinger_down))
+        max_close_candle = max(candles,key=lambda x:x['close'])
+        min_close_candle = min(candles,key=lambda x:x['close'])
+        print("last close:" + str(candles[-1]['close']) + " - last_bollinger_up:" + str(last_bollinger_up) + " - last_bollinger_down:" + str(last_bollinger_down) + " - max_close_candle:" + str(max_close_candle) + " - min_close_candle:" + str(min_close_candle))
         print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
-        time.sleep(5)
+        time.sleep(3)
 
-    if(candles[-1]['close'] >= last_bollinger_up):
-        action = "put"
+    if(USE_MAX_MIN):
+        if(candles[-1]['close'] >= max_close_candle):
+            action = "put"
 
-    if(candles[-1]['close'] <= last_bollinger_down):
-        action = "call"
+        if(candles[-1]['close'] <= min_close_candle):
+            action = "call"        
+    else:
+        if(candles[-1]['close'] >= last_bollinger_up):
+            action = "put"
+
+        if(candles[-1]['close'] <= last_bollinger_down):
+            action = "call"
 
     print("Action decide:" + action)
 
@@ -102,6 +116,7 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
                         print("you loose :(")
                         lost_score = lost_score + 1
                         lost_values = lost_values + float(win_money)
+                        loose_log_list.append([candles[-1]['close'], last_bollinger_up, last_bollinger_down, max_close_candle,min_close_candle])
                 break
             else:
                 time.sleep(5)
