@@ -44,7 +44,7 @@ print("Email:", iqoption.email)
 
 def try_bet(candles, last_bollinger_up, last_bollinger_down):
 
-    global win_score, lost_score, win_values, lost_values, max_close_candle, min_close_candle
+    global action, win_score, lost_score, win_values, lost_values, max_close_candle, min_close_candle
 
     # Test logic
     # candles[-1]['close']=0.720685
@@ -91,6 +91,8 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
         print("Buy Digital Option spot")
         _,id=iqoption.buy_digital_spot(ACTIVES_FINAL,AMOUNT,action,DURATION)
         print("Buy id: ", id)
+
+        #TODO: if buy_id = {'message': 'active_closed: rejected by risks'} then error
         
         while iqoption.get_async_order(id)==None:
             pass
