@@ -44,19 +44,18 @@ print("Email:", iqoption.email)
 
 def try_bet(candles, last_bollinger_up, last_bollinger_down):
 
-    global win_score, lost_score, win_values, lost_values
+    global win_score, lost_score, win_values, lost_values, max_close_candle, min_close_candle
 
     # Test logic
     # candles[-1]['close']=0.720685
     # last_bollinger_up=0.7206379734957176
     # last_bollinger_down=0.7203725265042824
 
-    while (not(candles[-1]['close'] >= last_bollinger_up) and not(candles[-1]['close']  <= last_bollinger_down)):
+    while ((not(candles[-1]['close'] >= last_bollinger_up) and not(candles[-1]['close']  <= last_bollinger_down)) or not(not(candles[-1]['close'] >= max_close_candle) and not(candles[-1]['close']  <= min_close_candle))):
         print("--------------------------------------------------------------------------------------------------------------")
         candles = getCandles()
         last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
-        max_close_candle = max(candles,key=lambda x:x['close'])
-        min_close_candle = min(candles,key=lambda x:x['close'])
+        max_close_candle,min_close_candle = getMinMaxClose(candles)
         print("last close:" + str(candles[-1]['close']) + " - last_bollinger_up:" + str(last_bollinger_up) + " - last_bollinger_down:" + str(last_bollinger_down) + " - max_close_candle:" + str(max_close_candle) + " - min_close_candle:" + str(min_close_candle))
         print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
         time.sleep(3)
@@ -139,6 +138,11 @@ def getBollingerBandsLimits(candles):
 
     return last_bollinger_up, last_bollinger_down
 
+def getMinMaxClose(candles):
+    max_close_candle = max(candles,key=lambda x:x['close'])['close']
+    min_close_candle = min(candles,key=lambda x:x['close'])['close']
+    return max_close_candle, min_close_candle
+
 #MFA
 if MFA_ENABLED:
      print("--------------------------------------------------------------------------------------------------------------")
@@ -163,6 +167,7 @@ if check:
     candles = getCandles()
 
     last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
+    max_close_candle,min_close_candle = getMinMaxClose(candles)
 
     #if see this you can close network for test
     while lost_score < lost_limit:
