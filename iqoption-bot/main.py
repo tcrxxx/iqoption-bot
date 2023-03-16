@@ -1,11 +1,12 @@
 import BollingerBandsUtils
+import pprint
 import CSVUtils
 import config
 import time
 from operator import attrgetter
 import PushbulletUtils
 from collections import defaultdict
-from iqoptionapi.stable_api import IQ_Option
+from iqoptionapi.stable_api import IQ_Option #Documentation: https://github.com/iqoptionapi/iqoptionapi/
 
 
 iqoption = IQ_Option(config.IQOPTION_USER,config.IQOPTION_PASS)
@@ -20,10 +21,13 @@ DIGITAL_SUFFIX="-OTC"
 ACTIVES_FINAL=ACTIVES + DIGITAL_SUFFIX if DIGITAL else ACTIVES
 CANDLES_INTERVAL=120 
 CANDLES_COUNT=222
+CANDLES_SIZE="all"#size=[1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000,"all"]
+CANDLES_REAL_SIZE="all"#size:[1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000,"all"]
+CANDLES_MAX_BUFFER=10 # maxdict:set max buffer you want to save
 DURATION=1#minute 1 or 5
 AMOUNT=50
 POLLING_TIME=3
-USE_MAX_MIN=True
+USE_MAX_MIN=False
 
 #Variables
 win_score,lost_score, lost_limit = 0,0,5
@@ -58,7 +62,7 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
         max_close_candle,min_close_candle = getMinMaxClose(candles)
         print("last close:" + str(candles[-1]['close']) + " - last_bollinger_up:" + str(last_bollinger_up) + " - last_bollinger_down:" + str(last_bollinger_down) + " - max_close_candle:" + str(max_close_candle) + " - min_close_candle:" + str(min_close_candle))
         print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
-        time.sleep(3)
+        time.sleep(1)
 
     if(USE_MAX_MIN):
         if(candles[-1]['close'] >= max_close_candle):
@@ -126,9 +130,21 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
 
 def getCandles():
     print("get candles")
-    candles = iqoption.get_candles(ACTIVES_FINAL,CANDLES_INTERVAL,CANDLES_COUNT,time.time())
-    # print(candles)
-    return candles
+    # candles = iqoption.get_candles(ACTIVES_FINAL,CANDLES_INTERVAL,CANDLES_COUNT,time.time())
+    candles=iqoption.get_realtime_candles(ACTIVES_FINAL,CANDLES_REAL_SIZE)
+
+    # pprint.pprint(candles)
+
+    candles_list=[]
+    for id, info in candles.items():
+        # print(id)
+        for k in info:
+            # print(k, info[k])
+            # print(info[k]['close'])
+            candles_list.append(info[k])
+
+    # return candles
+    return candles_list
 
 def getBollingerBandsLimits(candles):
     print("Calculating Bollinger Bands")
@@ -164,6 +180,8 @@ if check:
     print("Balance Type:", BALANCE_TYPE)
     print("Balance:", iqoption.get_balance())
     print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
+    print("Start Candles Stream...")
+    iqoption.start_candles_stream(ACTIVES_FINAL,CANDLES_SIZE,CANDLES_MAX_BUFFER)
     print("--------------------------------------------------------------------------------------------------------------")
     
     candles = getCandles()
@@ -198,6 +216,8 @@ if check:
     print("Lost limit reached -> losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit))
     print("wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
     PushbulletUtils.push_note_phone("Lost limit reached -> losts:" + str(lost_score) + " - lost_limit:" + str(lost_limit), "wins:" + str(win_score) + "(value:" + str(win_values) + ") - losts:" + str(lost_score) + " (value: " + str(lost_values) + ") - lost_limit:" + str(lost_limit))
+    print("Stop candles stream...")
+    iqoption.stop_candles_stream(goal,size)
     print("End of process!")
 
 else:
