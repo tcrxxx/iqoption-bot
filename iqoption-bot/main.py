@@ -3,6 +3,7 @@ import pprint
 import CSVUtils
 import config
 import time
+from decimal import Decimal
 from operator import attrgetter
 import PushbulletUtils
 from collections import defaultdict
@@ -21,9 +22,9 @@ DIGITAL_SUFFIX="-OTC"
 ACTIVES_FINAL=ACTIVES + DIGITAL_SUFFIX if DIGITAL else ACTIVES
 CANDLES_INTERVAL=120 
 CANDLES_COUNT=222
-CANDLES_SIZE="all"#size=[1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000,"all"]
-CANDLES_REAL_SIZE="all"#size:[1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000,"all"]
-CANDLES_MAX_BUFFER=10 # maxdict:set max buffer you want to save
+CANDLES_SIZE="all" #size=[1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000,"all"]
+CANDLES_REAL_SIZE=600 #"all" #size:[1,5,10,15,30,60,120,300,600,900,1800,3600,7200,14400,28800,43200,86400,604800,2592000,"all"]
+CANDLES_MAX_BUFFER=50 # maxdict:set max buffer you want to save
 DURATION=1#minute 1 or 5
 AMOUNT=50
 POLLING_TIME=3
@@ -46,6 +47,13 @@ check,reason=iqoption.connect()
 print('Reason:', reason)
 print("Email:", iqoption.email)
 
+def is_number(value):
+    try:
+        value = Decimal(value)
+        return True
+    except:
+        return False
+
 def try_bet(candles, last_bollinger_up, last_bollinger_down):
 
     global action, win_score, lost_score, win_values, lost_values, max_close_candle, min_close_candle
@@ -55,7 +63,8 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
     # last_bollinger_up=0.7206379734957176
     # last_bollinger_down=0.7203725265042824
 
-    while ((not(candles[-1]['close'] >= last_bollinger_up) and not(candles[-1]['close']  <= last_bollinger_down)) or not(not(candles[-1]['close'] >= max_close_candle) and not(candles[-1]['close']  <= min_close_candle))):
+    while ((not(candles[-1]['close'] >= last_bollinger_up) and not(candles[-1]['close']  <= last_bollinger_down))):
+        #    or not(not(candles[-1]['close'] >= max_close_candle) and not(candles[-1]['close']  <= min_close_candle))
         print("--------------------------------------------------------------------------------------------------------------")
         candles = getCandles()
         last_bollinger_up, last_bollinger_down = getBollingerBandsLimits(candles)
@@ -110,7 +119,8 @@ def try_bet(candles, last_bollinger_up, last_bollinger_down):
             check_close,win_money=iqoption.check_win_digital_v2(id)
             
             if check_close:
-                bet_candle = iqoption.get_candles(ACTIVES_FINAL,CANDLES_INTERVAL,CANDLES_COUNT,time.time())
+                # bet_candle = iqoption.get_candles(ACTIVES_FINAL,CANDLES_INTERVAL,CANDLES_COUNT,time.time())
+                bet_candle = getCandles()
                 print("Final candle close:",bet_candle[-1])
                 if float(win_money)>0:
                         win_values = win_values + float(win_money)
@@ -136,12 +146,20 @@ def getCandles():
     # pprint.pprint(candles)
 
     candles_list=[]
-    for id, info in candles.items():
-        # print(id)
-        for k in info:
-            # print(k, info[k])
-            # print(info[k]['close'])
-            candles_list.append(info[k])
+    if CANDLES_REAL_SIZE=="all":
+        for id, info in candles.items():
+            # print(id)
+            for k in info:
+                # print(k, info[k])
+                # print(info[k]['close'])
+                # print(info[k])
+                if is_number(info['close']):
+                    candles_list.append(info[k])
+    else:
+        for id, info in candles.items():
+            # print(info)
+            if is_number(info['close']):
+                candles_list.append(info) 
 
     # return candles
     return candles_list
