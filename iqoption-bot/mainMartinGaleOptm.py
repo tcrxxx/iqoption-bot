@@ -55,6 +55,11 @@ def try_bet(candles):
     action = MartingaleUtils.decide_action(chunk_last_action)
     print(f"Ação decidida: {action}")
 
+    if action=="hold":
+        print("Ação indicada hold. Aguardando o mercado para iniciar nova ação.")
+        time.sleep(5)
+        return
+
     if not DIGITAL:
         print("Comprando opção binária comum")
         _,id=iqoption.buy(AMOUNT,ACTIVES_FINAL,action,DURATION)
