@@ -19,6 +19,10 @@ Python 3.10
 - ./venv/bin/pip3 install numpy
 - ./venv/bin/pip3 install pushbullet.py
 
+ou
+
+pip install --no-cache-dir -r requirements.txt
+
 ## How to use
 
 1) Create config.py

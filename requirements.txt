@@ -1,0 +1,8 @@
+websocket-client==0.56
+iqoptionapi
+iqoption
+pandas_datareader
+matplotlib
+pandas
+numpy
+pushbullet.py
