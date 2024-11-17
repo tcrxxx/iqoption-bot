@@ -148,4 +148,4 @@ while ((lost_score < LOST_LIMIT) or (lost_score/(lost_score+win_score)>=LOST_LIM
 
 print("Limite de perdas atingido. Finalizando bot.")
 PushbulletUtils.push_note_phone("Bot finalizado", f"Vitórias: {win_score}, Derrotas: {lost_score}")
-iqoption.stop_candles_stream(ACTIVES_FINAL)
+iqoption.stop_candles_stream(ACTIVES_FINAL,CANDLES_REAL_SIZE)
