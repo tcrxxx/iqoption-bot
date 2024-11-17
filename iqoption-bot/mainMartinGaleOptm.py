@@ -19,12 +19,14 @@ DURATION = 1
 AMOUNT = 50
 POLLING_TIME = 3
 LOST_LIMIT = 25
+LOST_LIMIT_PERCENT= 25
 MFA_ENABLED = False
 
 ACTIVES_FINAL = f"{ACTIVES}-OTC" if DIGITAL else ACTIVES
 
 # Variáveis globais
 win_score, lost_score, win_values, lost_values = 0, 0, 0, 0
+is_lost_past=False
 action = "call"
 loose_log_list = []
 
@@ -48,10 +50,10 @@ def get_candles():
 
 def try_bet(candles):
     """Executa uma tentativa de aposta baseada nos dados de velas."""
-    global action, win_score, lost_score, win_values, lost_values
+    global action, win_score, lost_score, win_values, lost_values, is_lost_past
 
     print("Iniciando nova tentativa de aposta...")
-    chunk_last_action = MartingaleUtils.define_martingale_candle(candles, lost_score)
+    chunk_last_action = MartingaleUtils.define_martingale_candle(candles, lost_score, is_lost_past)
     action = MartingaleUtils.decide_action(chunk_last_action)
     print(f"Ação decidida: {action}")
 
@@ -77,7 +79,9 @@ def try_bet(candles):
         _,id=iqoption.buy_digital_spot(ACTIVES_FINAL,AMOUNT,action,DURATION)
         print("Compra com id: ", id)
 
-        #TODO: if buy_id = {'message': 'active_closed: rejected by risks'} then error
+        if id == {'message': 'active_closed: rejected by risks'}:
+            print("Não foi possível comprar, pois foi rejeitado por risco.")
+            return
         
         while iqoption.get_async_order(id)==None:
             pass
@@ -99,11 +103,13 @@ def try_bet(candles):
                         win_money=("%.2f" % (win_money))
                         print("Você ganhou ",win_money," money :D")
                         win_score = win_score + 1
+                        is_lost_past=False
                 else:
                         print("Você perdeu :(")
                         lost_score = lost_score + 1
                         lost_values = lost_values + float(win_money)
                         loose_log_list.append([candles[-1]['close'], candles[-1]['max'],candles[-1]['min']])
+                        is_lost_past=True
                 break
             else:
                 time.sleep(5)
@@ -135,7 +141,7 @@ PushbulletUtils.push_note_phone("Bot iniciado", f"Ativo: {ACTIVES_FINAL}, Tipo d
 print(f"Saldo inicial: {iqoption.get_balance()}")
 
 # Loop principal
-while lost_score < LOST_LIMIT:
+while ((lost_score < LOST_LIMIT) or (lost_score/(lost_score+win_score)>=LOST_LIMIT_PERCENT)):
     print(f"Placar: Vitórias: {win_score}, Derrotas: {lost_score}")
     candles = get_candles()
     try_bet(candles)
